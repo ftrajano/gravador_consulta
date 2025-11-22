@@ -165,9 +165,11 @@ export default function Home() {
 
           {/* Transcrição */}
           {transcricao && (
-            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
-              <h3 className="text-sm font-medium text-green-900 mb-2">Transcrição:</h3>
-              <p className="text-sm text-green-800 whitespace-pre-wrap">{transcricao}</p>
+            <div className="mt-6 p-6 bg-green-50 border border-green-200 rounded-md">
+              <h3 className="text-sm font-medium text-green-900 mb-3">Transcrição:</h3>
+              <div className="max-h-[500px] overflow-y-auto bg-white p-4 rounded border border-green-200">
+                <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{transcricao}</p>
+              </div>
               <button
                 onClick={() => {
                   setTranscricao(null);
