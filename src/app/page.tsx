@@ -11,6 +11,35 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [transcricao, setTranscricao] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [resultado, setResultado] = useState<any | null>(null);
+
+  const handleProcess = async () => {
+    if (!transcricao) return;
+
+    setIsProcessing(true);
+    setUploadError(null);
+
+    try {
+      const response = await fetch("/api/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcricao }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao processar transcrição");
+      }
+
+      setResultado(data);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Erro ao processar");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!audioBlob) return;
@@ -170,12 +199,98 @@ export default function Home() {
               <div className="max-h-[500px] overflow-y-auto bg-white p-4 rounded border border-green-200">
                 <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{transcricao}</p>
               </div>
+              {!resultado && (
+                <div className="mt-4 flex gap-3">
+                  <button
+                    onClick={handleProcess}
+                    disabled={isProcessing}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        Processando...
+                      </>
+                    ) : (
+                      "Processar com IA"
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTranscricao(null);
+                      resetRecording();
+                    }}
+                    disabled={isProcessing}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
+                  >
+                    Nova Gravação
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Resultado processado */}
+          {resultado && (
+            <div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-md">
+              <h3 className="text-lg font-medium text-blue-900 mb-4">Resumo da Consulta</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-blue-800">Resumo Geral</h4>
+                  <p className="mt-1 text-sm text-gray-700 bg-white p-3 rounded border">{resultado.resumo_geral}</p>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-blue-800">Queixa Principal</h4>
+                  <p className="mt-1 text-sm text-gray-700 bg-white p-3 rounded border">{resultado.queixa_principal}</p>
+                </div>
+
+                {resultado.sintomas && resultado.sintomas.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-800">Sintomas</h4>
+                    <div className="mt-1 space-y-2">
+                      {resultado.sintomas.map((sintoma: any, index: number) => (
+                        <div key={index} className="bg-white p-3 rounded border">
+                          <p className="font-medium text-sm text-gray-800">{sintoma.nome}</p>
+                          <p className="text-sm text-gray-600 mt-1">{sintoma.descricao}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Duração: {sintoma.duracao} | Frequência: {sintoma.frequencia}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <h4 className="text-sm font-medium text-blue-800">Antecedentes Relevantes</h4>
+                  <p className="mt-1 text-sm text-gray-700 bg-white p-3 rounded border">{resultado.antecedentes_relevantes}</p>
+                </div>
+
+                {resultado.possiveis_sinais_de_alarme && resultado.possiveis_sinais_de_alarme.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-red-700">Possíveis Sinais de Alarme</h4>
+                    <ul className="mt-1 text-sm text-red-600 bg-red-50 p-3 rounded border border-red-200 list-disc list-inside">
+                      {resultado.possiveis_sinais_de_alarme.map((sinal: string, index: number) => (
+                        <li key={index}>{sinal}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                  <p className="text-xs text-yellow-800">{resultado.observacao_de_seguranca}</p>
+                </div>
+              </div>
+
               <button
                 onClick={() => {
                   setTranscricao(null);
+                  setResultado(null);
                   resetRecording();
                 }}
-                className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
               >
                 Nova Gravação
               </button>
