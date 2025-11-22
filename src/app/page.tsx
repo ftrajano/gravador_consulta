@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useRecorder } from "@/hooks/useRecorder";
 
 export default function Home() {
-  const router = useRouter();
   const { status, audioBlob, error, startRecording, stopRecording, resetRecording } = useRecorder();
 
   const [titulo, setTitulo] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [transcricao, setTranscricao] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     if (!audioBlob) return;
@@ -37,8 +36,8 @@ export default function Home() {
         throw new Error(data.error || "Erro ao processar transcrição");
       }
 
-      // Redirecionar para a página da consulta
-      router.push(`/consulta/${data.id}`);
+      // Mostrar transcrição na página
+      setTranscricao(data.transcricao);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Erro ao enviar áudio");
     } finally {
@@ -161,6 +160,23 @@ export default function Home() {
           {uploadError && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{uploadError}</p>
+            </div>
+          )}
+
+          {/* Transcrição */}
+          {transcricao && (
+            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
+              <h3 className="text-sm font-medium text-green-900 mb-2">Transcrição:</h3>
+              <p className="text-sm text-green-800 whitespace-pre-wrap">{transcricao}</p>
+              <button
+                onClick={() => {
+                  setTranscricao(null);
+                  resetRecording();
+                }}
+                className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+              >
+                Nova Gravação
+              </button>
             </div>
           )}
         </div>
